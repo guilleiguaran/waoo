@@ -84,7 +84,7 @@ function listarSolicitudesAsignadasMatDiv(id){
 					else{
 						$("#"+id).append("<div class='alert table-responsive'>"
 							+"<table id='tblmat_"+i+"' class='table table-condensed'>"
-								+"<tr><th>T&iacute;tulo</th><th>Estado</th><th>&nbsp;</th></tr>"
+								+"<tr><th>T&iacute;tulo</th><th class='al-right'>Estado</th><th>&nbsp;</th></tr>"
 							+"</table>"
 							+"<div id='detsols_"+el[0]+"' class='alert alert-dismissable'></div>"
 						+"</div>");
@@ -138,7 +138,7 @@ function listarSolicitudesSinAsignarDiv(id){
 						$.each(json,function(i2,v){
 							$("#tblmat_"+i).append("<tr>"
 								+"<td>"+((v.titulo).substring(0,10)+"...")+"</td>"
-								+"<td>"
+								+"<td class='al-right'>"
 									+"<img style='margin:0;cursor:pointer;' src='images/icons/blue/plus.png' onclick='verDetalleSolicitud("+v.id+",\"detsols_"+el[0]+"\",1);'>"
 								+"</td>"
 							+"</tr>");
@@ -168,7 +168,7 @@ function listarSolicitudesCreadasMatDiv(id){
 				else{
 					$("#"+id).html("<div class='alert table-responsive'>"
 						+"<table id='tblmat_"+id+"' class='table table-condensed'>"
-							+"<tr><th>T&iacute;tulo</th><th>Estado</th></tr>"
+							+"<tr><th>T&iacute;tulo</th><th class='al-right'>Estado</th></tr>"
 						+"</table>"
 						+"<div id='detsols_"+id+"' class='alert'></div>"
 					+"</div>");
@@ -176,7 +176,7 @@ function listarSolicitudesCreadasMatDiv(id){
 					$.each(json,function(i2,v){
 						$("#tblmat_"+id).append("<tr>"
 							+"<td>"+((v.titulo).substring(0,10)+"...")+"</td>"
-							+"<td style='vertical-align: bottom;'>"
+							+"<td class='al-right' style='vertical-align: bottom;'>"
 								+v.estado
 								+"<img style='margin:0;cursor:pointer;display:inline;' src='images/icons/blue/plus.png' onclick='verDetalleSolicitud("+v.id+",\"detsols_"+id+"\""+(v.asistente!='nousr'?',1':'')+");'>"
 							+"</td>"
@@ -360,13 +360,14 @@ function verOfertas(id,iddiv){
 					var json = JSON.parse('['+resp.msg+']');
 					$.each(json,function(i2,v){
 						$("#"+iddiv+" ul").append("<li>"
-							+"<div class='shop_thumb' style='position:initial !important;'><img src='images/shop_thumb1.jpg'></div>"
+							+"<div class='shop_thumb' style='position:initial !important;'><img class='js-shop-thumb-"+v.asistente+"' src=''></div>"
 							+"<div class='shop_item_details'>"
 								+"<h4 style='position:initial !important;'><a href='#'>"+v.asistente+"</a> <span class='stars'>"+v.calificacion+"</span></h4>"
 								+"<div class='shop_item_price'>$ "+v.valor+"</div>"
 							+"</div>"
 							+"<a id='addtocart' style='cursor:pointer;' onclick='aceptarOferta("+v.id+","+v.valor+");'>ACEPTAR</a>"
 						+"</li>");
+						colocarAvatarOf(".js-shop-thumb-"+v.asistente,v.asistente);
 					});
 					$('.stars').stars();
 				}
@@ -470,11 +471,39 @@ function aceptarSolucion(id){
 }
 
 function aceptarOferta(id,valor){
-	cargaPagina('data/pasarela.html',10);
-	setTimeout(function () {
-		$('.js-idSolicitud').val(id);
-		$('.js-valorOferta').val(valor);
-	},600);
+	if(valor*1>0){
+		cargaPagina('data/pasarela.html',10);
+		setTimeout(function () {
+			$('.js-idSolicitud').val(id);
+			$('.js-valorOferta').val(valor);
+		},600);
+	}
+	else if(valor*1 == 0){
+		aceptarOfertaCero(id);
+	}
+}
+
+function aceptarOfertaCero(id) {
+	$.ajax({
+		type : 'post',
+		url : waooserver+"/solicitudes/aceptarPrecioCero",
+		dataType: "json",
+		data : {idpreciotrabajo:id},
+		success : function(resp) {
+			if(resp.error) alert(resp.error);
+			else{
+				alert(resp.msg);
+				cargaPagina('data/chats.html',6);
+				setTimeout(function () {
+					misendbird.killTask();
+					misendbird.init(0,resp.nickasistente);
+				},200);
+			}
+		},
+		error: function(e) {
+			alert(e.message);
+		}
+	});
 }
 
 function agregarFilaArchivo(){
